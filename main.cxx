@@ -3,7 +3,6 @@
 #include <vector>
 #include <math.h>
 #include <stdexcept>
-// #include <python3.8>
 #include "matplotlibcpp.h"
 
 namespace plt = matplotlibcpp;
@@ -17,7 +16,9 @@ class MDS{
     float k; // spring coeff
     float zeta; //damping ratio
     float wn; //natural frequency
+
     float time_s[2]; //start time and end time
+    bool times_set=false;
 
     vector<float> initial_state; // initial position,velocity;
     bool initial_state_set =false; 
@@ -76,8 +77,12 @@ class MDS{
     }
 
     void set_times(float T, float t0=0){
+        if((t0<0)||(t0>T)){
+            throw logic_error("Start time should be non-negative and End time should be greater than start time.");
+        }
         time_s[0]=t0;
         time_s[1]=T;
+        times_set = true;
     }
     
     //functions involved in RK4
@@ -90,26 +95,29 @@ class MDS{
     }
 
     //RK4 Solver
-    vector<vector<float>> RK4Solver(float T, float t0=0,float dt = 0.001){
+    vector<vector<float>> RK4Solver(float dt = 0.001){
 
         if (initial_state_set != true){
             throw logic_error("Initial state not state. Use set_initial_state() first.");
         }
-        set_times(t0,T);
+        if (times_set !=true){
+            throw logic_error("Start and end times not set. Use set_times() first.");
+        }
 
         vector<float> x_vec; 
         vector<float> xdot_vec;
         vector<float> time_vec;
 
-        float t= t0;
+        float t= time_s[0];
+        float T= time_s[1];
         float x = initial_state[0];
         float x_dot = initial_state[1];
 
         x_vec.push_back(x);
         xdot_vec.push_back(x_dot);
-        time_vec.push_back(t0);
+        time_vec.push_back(t);
 
-        int ntimes = (T-t0)/dt;
+        int ntimes = (T-t)/dt;
 
         for(int ii = 0;ii<=ntimes;ii++){
             t= t+dt;
@@ -146,7 +154,7 @@ void plot2D(vector<float> x,vector<float> y, string title = "Mass-Spring-Damper 
     plt::xlabel(x_label);
     plt::ylabel(y_label);
     plt::title("Mass-Spring-Damper (RK4)");
-    plt::named_plot("m,c,k= 1,1,0",y,x);
+    plt::named_plot("m,c,k= 1,1,1",y,x);
     plt::legend();
     plt::show();
 
@@ -155,12 +163,10 @@ void plot2D(vector<float> x,vector<float> y, string title = "Mass-Spring-Damper 
 int main(){
     MDS myMDS(1,1,1);
 
-    // vector<float> config = myMDS.get_config(true);
-    // myMDS.print();
-
     myMDS.set_initial_state(2,0);
-
-    auto solved_RK4 = myMDS.RK4Solver(10);
+    myMDS.set_times(10,0);
+    
+    auto solved_RK4 = myMDS.RK4Solver();
     plot2D(solved_RK4[0],solved_RK4[2]);
 
     return 0;
