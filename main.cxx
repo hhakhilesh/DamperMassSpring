@@ -22,19 +22,36 @@ class MDS{
     vector<float> initial_state; // initial position,velocity;
     bool initial_state_set =false; 
 
-
     public:
     
     void print(){cout<<c<<endl;}
 
     //constructors
     MDS(float m,float c, float k):m(m),c(c),k(k){
+
+        if (m<0){
+            throw invalid_argument("Error: m has to be positive.");
+        }
+        if (c<=0){
+            throw invalid_argument("Error: c has to be non-negative");
+        }
+        if (k<=0){
+            throw invalid_argument("Error: k has to be non-negative");
+        }
+
         wn = sqrt(k/m);
         zeta = (c/m);
     }
 
-    MDS(float zeta, float wn):zeta(zeta),wn(wn){}
+    MDS(float zeta, float wn):zeta(zeta),wn(wn){
 
+        if (zeta<0){
+            throw invalid_argument("Error: zeta has to be non-negative.");
+        }
+        if (wn<0){
+            throw invalid_argument("Error: wn has to be non-negative.");
+        }
+    }
     void set_initial_state(float inx0, float inx0_dot){
 
         initial_state = {inx0,inx0_dot};
@@ -75,10 +92,8 @@ class MDS{
     //RK4 Solver
     vector<vector<float>> RK4Solver(float T, float t0=0,float dt = 0.001){
 
-        // bool result = false;
-
-        if (initial_state_set = false){
-            throw runtime_error("Initial state not state. Use set_initial_state() first.");
+        if (initial_state_set != true){
+            throw logic_error("Initial state not state. Use set_initial_state() first.");
         }
         set_times(t0,T);
 
@@ -138,19 +153,15 @@ void plot2D(vector<float> x,vector<float> y, string title = "Mass-Spring-Damper 
 }
 
 int main(){
-    MDS myMDS(1,1,0);
+    MDS myMDS(1,1,1);
 
-    vector<float> config = myMDS.get_config(true);
+    // vector<float> config = myMDS.get_config(true);
     // myMDS.print();
 
     myMDS.set_initial_state(2,0);
 
     auto solved_RK4 = myMDS.RK4Solver(10);
     plot2D(solved_RK4[0],solved_RK4[2]);
-
-    // auto solved_ana = myMDS.ana_solve(10);
-    // plot2D(solved_ana[0],solved_ana[2],"Mass-Spring-Damper (Analytical)");
-    
 
     return 0;
 }
